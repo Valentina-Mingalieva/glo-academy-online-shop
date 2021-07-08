@@ -14,7 +14,6 @@ headerCityButton.addEventListener('click', () => {
     const city = prompt('What is your city?');
     headerCityButton.textContent = city;
     localStorage.setItem('lomoda-location', city);
-    
 })    
 
 // scroll
@@ -69,11 +68,11 @@ const getData = async () => {
     }
 }
 
-const getGoods = (callback, value) => {
+const getGoods = (callback, prop, value) => {
     getData()
         .then(data => {
             if (value) {
-                callback(data.filter(item => item.category === value))
+                callback(data.filter(item => item[prop] === value))
             } else {
                 callback(data);
             }
@@ -96,11 +95,19 @@ cartOverlay.addEventListener('click', e => {
         modalCartClose();
 } */
 
+// goods category page
+
 try {
     const goodsList = document.querySelector('.goods__list');
 
     if (!goodsList) {
         throw 'This is not a goods page'
+    }
+
+    const goodsTitle = document.querySelector('.goods__title');
+
+    const changeH2Title = () => {
+        goodsTitle.textContent = document.querySelector(`[href*='#${hash}']`).textContent;
     }
 
     const createCard = ({id, preview, cost, brand, name, sizes}) => {
@@ -141,26 +148,79 @@ try {
     }
 
     window.addEventListener('hashchange', () => {
-        
         hash = location.hash.substring(1);
-        getGoods(renderGoodsList, hash);
-        goodsTitle.textContent = navLink.textContent;
+        getGoods(renderGoodsList, 'category', hash);   
+        changeH2Title();
     })
     
-    getGoods(renderGoodsList, hash);
+    changeH2Title();
+    getGoods(renderGoodsList, 'category', hash);
     
 } catch (err) {
     console.warn(err)
 }
 
-// change h2 title
+// one good page
 
-/* let goodsTitle = document.querySelector('.goods__title');
-const navLink = document.querySelector('.navigation__link');
+try {
+    if (!document.querySelector('.card-good')) {
+        throw 'This is not a card-good page';
+    }
+    const goodImage = document.querySelector('.card-good__image');;
+    const goodBrand = document.querySelector ('.card-good__brand');
+    const goodTitle = document.querySelector ('.card-good__title');
+    const goodPrice = document.querySelector ('.card-good__price');
+    const goodColor = document.querySelector ('.card-good__color');
+    const goodSizes = document.querySelector ('.card-good__sizes');
+    const goodColorList = document.querySelector ('.card-good__color-list');
+    const goodSizesList = document.querySelector('.card-good__sizes-list');
+    const goodBuy = document.querySelector('.card-good__buy');
+    const goodSelectWrapper = document.querySelectorAll('.card-good__select__wrapper');
 
-function changeTitle(e) {
-    const target = e.target;
-    e.target.textContent = goodsTitle.textContent;
+    const generateList = data => data.reduce((html, item, index) =>
+        html + `<li class='card-good__select-item' data-id='${index}'>${item}</li>`, '');
+    
+    const renderGoodPage = ([{ brand, name, cost, color, sizes, photo }]) => {
+        goodImage.src = `goods-image/${photo}`;
+        goodImage.alt = `${brand} ${name}`;
+        goodBrand.textContent = brand;
+        goodTitle.textContent = name;
+        goodPrice.textContent = `${cost} ₽`;
+        if (color) {
+            goodColor.textContent = color[0];
+            goodColor.dataset.id = 0;
+            goodColorList.innerHTML = generateList(color);
+        } else {
+            goodColor.style.display = 'none';
+        }
+        if (sizes) {
+            goodSizes.textContent = sizes[0];
+            goodSizes.dataset.id = 0;
+            goodSizesList.innerHTML = generateList(sizes);
+        } else {
+            goodSizes.style.display = 'none';
+        }
+    };
+
+    goodSelectWrapper.forEach(item => {
+        item.addEventListener('click', e => {
+            const target = e.target;
+
+            if (target.closest('.card-good__select')) {
+                target.classList.toggle('card-good__select__open');
+            }
+
+            if (target.closest('.card-good__select-item')) {
+                const goodSelect = item.querySelector('.card-good__select');
+                goodSelect.textContent = target.textContent;
+                goodSelect.dataset.id = target.dataset.id;
+                goodSelect.classList.remove('card-good__select__open');
+            }
+        });
+    });
+
+    getGoods(renderGoodPage, 'id', hash);
+    
+} catch (err) {
+    console.warn(err);
 }
-
-navLink.addEventListener('click', changeTitle()); */
