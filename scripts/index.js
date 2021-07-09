@@ -1,20 +1,70 @@
-// LESSON 1
-
+const subheaderCart = document.querySelector('.subheader__cart');
+const cartOverlay = document.querySelector('.cart-overlay');
 const headerCityButton = document.querySelector('.header__city-button');
+const cartListGoods = document.querySelector('.cart__list-goods');
+const cartTotalCost = document.querySelector('.cart__total-cost')
 
 let hash = location.hash.substring(1);
 
-/* if (localStorage.getItem('lomoda-location')) {
-    headerCityButton.textContent = localStorage.getItem('lomoda-location');
-} */
+const updateLocation = () => {
+    const lsLocation = localStorage.getItem('lomoda-location');
 
-headerCityButton.textContent = localStorage.getItem('lomoda-location') || 'What is your city?';
+    headerCityButton.textContent =
+        lsLocation && lsLocation !== 'null' ?
+            lsLocation : 'What is your city?';
+}
 
 headerCityButton.addEventListener('click', () => {
     const city = prompt('What is your city?');
-    headerCityButton.textContent = city;
-    localStorage.setItem('lomoda-location', city);
-})    
+    if (city !== null) {
+        localStorage.setItem('lomoda-location', city);
+    } 
+    updateLocation();
+})   
+
+updateLocation();
+
+const getLocalStorage = () => JSON?.parse(localStorage.getItem('cart-lomoda')) || [];
+const setLocalStorage = (data) => localStorage.setItem('cart-lomoda', JSON.stringify(data));
+
+// create cart table
+const renderCart = () => {
+    cartListGoods.textContent = '';
+
+    const cartItems = getLocalStorage();
+
+    let totalPrice = 0;
+
+    cartItems.forEach((item, i) => {
+       
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${i+1}</td>
+            <td>${item.brand} ${item.name}</td>
+            ${item.color ? `<td>${item.color}</td>` : '<td>-</td>'}
+            ${item.size ? `<td>${item.size}</td>` : '<td>-</td>'}
+            <td>${item.cost} &#8381;</td>
+            <td><button class="btn-delete" data-id="${item.id}">&times;</button></td>
+        `;
+        totalPrice += item.cost;
+        cartListGoods.append(tr);
+    })
+    cartTotalCost.textContent = totalPrice + '  ₽';
+}
+
+// removing items from the cart
+const deleteItemCart = id => {
+    const cartItems = getLocalStorage();
+    const newCartItems = cartItems.filter(item => item.id != id);
+    setLocalStorage(newCartItems);
+}
+
+cartListGoods.addEventListener('click', e => {
+    if (e.target.matches('.btn-delete')) {
+        deleteItemCart(e.target.dataset.id);
+        renderCart();
+    }
+})
 
 // scroll
 
@@ -41,20 +91,17 @@ const enableScroll = () => {
 
 // modal window
 
-const subheaderCart = document.querySelector('.subheader__cart');
-const cartOverlay = document.querySelector('.cart-overlay');
 
 const modalCartOpen = () => {
     cartOverlay.classList.add('cart-overlay-open');
     disableScroll();
+    renderCart();
 }    
 
 const modalCartClose = () => {
     cartOverlay.classList.remove('cart-overlay-open');
     enableScroll();
-}    
-
-// LESSON 2
+}  
 
 // Database query
 
@@ -180,7 +227,10 @@ try {
     const generateList = data => data.reduce((html, item, index) =>
         html + `<li class='card-good__select-item' data-id='${index}'>${item}</li>`, '');
     
-    const renderGoodPage = ([{ brand, name, cost, color, sizes, photo }]) => {
+    const renderGoodPage = ([{ id, brand, name, cost, color, sizes, photo }]) => {
+
+        const data = { brand, name, cost, id };
+
         goodImage.src = `goods-image/${photo}`;
         goodImage.alt = `${brand} ${name}`;
         goodBrand.textContent = brand;
@@ -200,6 +250,30 @@ try {
         } else {
             goodSizes.style.display = 'none';
         }
+
+        if (getLocalStorage().some(item => item.id === id)) {
+            goodBuy.classList.add('delete');
+            goodBuy.textContent = 'Remove item from the cart';
+        }
+ 
+        goodBuy.addEventListener('click', () => {
+            if (goodBuy.classList.contains('delete')) {
+                deleteItemCart(id);
+                goodBuy.classList.remove('delete');
+                goodBuy.textContent = 'Add to the cart';
+                return;
+            };
+
+            if (color) data.color = goodColor.textContent;
+            if (sizes) data.size = goodSizes.textContent;
+
+            goodBuy.classList.add('delete');
+            goodBuy.textContent = 'Remove item from the cart';
+
+            const cardData = getLocalStorage();
+            cardData.push(data);
+            setLocalStorage(cardData);
+        })
     };
 
     goodSelectWrapper.forEach(item => {
